@@ -2,7 +2,7 @@ const std = @import("std");
 
 const FILENAME = "adventofcode_2023_02.txt";
 
-const Day01Error = error{
+const Day02Error = error{
     NoGameSeparatorFound,
     NoGameIdSeparatorFound,
     NoCubesSeparatorFound,
@@ -43,10 +43,10 @@ fn parseCubes(str: []const u8) !Cubes {
             'r' => Cubes{ .Red = quantity },
             'g' => Cubes{ .Green = quantity },
             'b' => Cubes{ .Blue = quantity },
-            else => error.InvalidColor,
+            else => Day02Error.InvalidColor,
         };
     }
-    return error.NoCubesSeparatorFound;
+    return Day02Error.NoCubesSeparatorFound;
 }
 
 fn parseGame(line: []const u8) !Game {
@@ -55,8 +55,9 @@ fn parseGame(line: []const u8) !Game {
         if (std.mem.indexOfScalar(u8, line[0..colonPos], ' ')) |spacePos| {
             game.id = try std.fmt.parseInt(u32, line[spacePos + 1 .. colonPos], 10);
         } else {
-            return error.NoGameIdSeparatorFound;
+            return Day02Error.NoGameIdSeparatorFound;
         }
+
         var handIterator = std.mem.splitAny(u8, line[colonPos + 1 ..], ";");
         while (handIterator.next()) |hand| {
             var cubesIterator = std.mem.splitAny(u8, hand, ",");
@@ -72,7 +73,7 @@ fn parseGame(line: []const u8) !Game {
         }
         return game;
     }
-    return error.NoGameSeparatorFound;
+    return Day02Error.NoGameSeparatorFound;
 }
 
 test "parseGame valid" {
@@ -126,7 +127,7 @@ pub fn main() !void {
     const gameSums = try parseGames(FILENAME);
     try stdout.print("valid id sum: {d}\n", .{gameSums[0]});
     try stdout.print("power sum: {d}\n", .{gameSums[1]});
-    try stdout.print("time usage: {d}μs\n", .{std.time.microTimestamp() - start});
+    try stdout.print("time usage: {d} μs\n", .{std.time.microTimestamp() - start});
 
     try stdoutBuffer.flush();
 }

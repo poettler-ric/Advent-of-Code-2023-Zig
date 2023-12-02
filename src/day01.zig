@@ -120,7 +120,7 @@ pub fn main() !void {
     const sums = try getCalibrationSums(FILENAME);
     try stdout.print("calibration sum: {d}\n", .{sums[0]});
     try stdout.print("calibration sum spelled: {d}\n", .{sums[1]});
-    try stdout.print("time usage: {d}μs\n", .{std.time.microTimestamp() - start});
+    try stdout.print("time usage: {d} μs\n", .{std.time.microTimestamp() - start});
 
     try stdoutBuffer.flush();
 }
