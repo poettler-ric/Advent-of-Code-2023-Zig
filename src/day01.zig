@@ -72,19 +72,18 @@ fn getCalibrationValueSpelled(str: []const u8) Day01Error!u32 {
 }
 
 test "getCalibrationValueSpelled" {
-    @setEvalBranchQuota(4000);
-    try std.testing.expectEqual(12, comptime try getCalibrationValueSpelled("1abc2"));
-    try std.testing.expectEqual(38, comptime try getCalibrationValueSpelled("pqr3stu8vwx"));
-    try std.testing.expectEqual(15, comptime try getCalibrationValueSpelled("a1b2c3d4e5f"));
-    try std.testing.expectEqual(77, comptime try getCalibrationValueSpelled("treb7uchet"));
-    try std.testing.expectEqual(29, comptime try getCalibrationValueSpelled("two1nine"));
-    try std.testing.expectEqual(83, comptime try getCalibrationValueSpelled("eightwothree"));
-    try std.testing.expectEqual(13, comptime try getCalibrationValueSpelled("abcone2threexyz"));
-    try std.testing.expectEqual(24, comptime try getCalibrationValueSpelled("xtwone3four"));
-    try std.testing.expectEqual(42, comptime try getCalibrationValueSpelled("4nineeightseven2"));
-    try std.testing.expectEqual(14, comptime try getCalibrationValueSpelled("zoneight234"));
-    try std.testing.expectEqual(76, comptime try getCalibrationValueSpelled("7pqrstsixteen"));
-    try std.testing.expectEqual(31, comptime try getCalibrationValueSpelled("3one8ncctmbsixeighttwonegb"));
+    try std.testing.expect(12 == try getCalibrationValueSpelled("1abc2"));
+    try std.testing.expect(38 == try getCalibrationValueSpelled("pqr3stu8vwx"));
+    try std.testing.expect(15 == try getCalibrationValueSpelled("a1b2c3d4e5f"));
+    try std.testing.expect(77 == try getCalibrationValueSpelled("treb7uchet"));
+    try std.testing.expect(29 == try getCalibrationValueSpelled("two1nine"));
+    try std.testing.expect(83 == try getCalibrationValueSpelled("eightwothree"));
+    try std.testing.expect(13 == try getCalibrationValueSpelled("abcone2threexyz"));
+    try std.testing.expect(24 == try getCalibrationValueSpelled("xtwone3four"));
+    try std.testing.expect(42 == try getCalibrationValueSpelled("4nineeightseven2"));
+    try std.testing.expect(14 == try getCalibrationValueSpelled("zoneight234"));
+    try std.testing.expect(76 == try getCalibrationValueSpelled("7pqrstsixteen"));
+    try std.testing.expect(31 == try getCalibrationValueSpelled("3one8ncctmbsixeighttwonegb"));
 }
 
 fn getCalibrationSums(fileName: []const u8) ![2]u32 {
