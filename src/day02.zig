@@ -9,15 +9,15 @@ const Day01Error = error{
     InvalidColor,
 };
 
-const GameRecord = struct {
+const Game = struct {
     id: u32,
     valid: bool,
-    minimumRed: u32 = 0,
-    minimumGreen: u32 = 0,
-    minimumBlue: u32 = 0,
+    red: u32 = 0,
+    green: u32 = 0,
+    blue: u32 = 0,
 
-    fn power(self: GameRecord) u32 {
-        return self.minimumRed * self.minimumGreen * self.minimumBlue;
+    fn power(self: Game) u32 {
+        return self.red * self.green * self.blue;
     }
 };
 
@@ -36,7 +36,7 @@ fn isValid(cubes: Cubes) bool {
 }
 
 fn parseCubes(str: []const u8) !Cubes {
-    const trimmed = std.mem.trim(u8, str, " ");
+    const trimmed = std.mem.trimLeft(u8, str, " ");
     if (std.mem.indexOfScalar(u8, trimmed, ' ')) |spacePos| {
         const quantity = try std.fmt.parseInt(u32, trimmed[0..spacePos], 10);
         return switch (trimmed[spacePos + 1]) {
@@ -49,11 +49,11 @@ fn parseCubes(str: []const u8) !Cubes {
     return error.NoCubesSeparatorFound;
 }
 
-fn parseGame(line: []const u8) !GameRecord {
+fn parseGame(line: []const u8) !Game {
     if (std.mem.indexOfScalar(u8, line, ':')) |colonPos| {
-        var record = GameRecord{ .id = 0, .valid = true };
+        var game = Game{ .id = 0, .valid = true };
         if (std.mem.indexOfScalar(u8, line[0..colonPos], ' ')) |spacePos| {
-            record.id = try std.fmt.parseInt(u32, line[spacePos + 1 .. colonPos], 10);
+            game.id = try std.fmt.parseInt(u32, line[spacePos + 1 .. colonPos], 10);
         } else {
             return error.NoGameIdSeparatorFound;
         }
@@ -62,15 +62,15 @@ fn parseGame(line: []const u8) !GameRecord {
             var cubesIterator = std.mem.splitAny(u8, hand, ",");
             while (cubesIterator.next()) |cubesString| {
                 const cubes = try parseCubes(cubesString);
-                record.valid = record.valid and isValid(cubes);
+                game.valid = game.valid and isValid(cubes);
                 switch (cubes) {
-                    .Red => |n| record.minimumRed = @max(record.minimumRed, n),
-                    .Green => |n| record.minimumGreen = @max(record.minimumGreen, n),
-                    .Blue => |n| record.minimumBlue = @max(record.minimumBlue, n),
+                    .Red => |n| game.red = @max(game.red, n),
+                    .Green => |n| game.green = @max(game.green, n),
+                    .Blue => |n| game.blue = @max(game.blue, n),
                 }
             }
         }
-        return record;
+        return game;
     }
     return error.NoGameSeparatorFound;
 }
@@ -104,11 +104,11 @@ fn parseGames(fileName: []const u8) ![2]u32 {
     var powerSum: u32 = 0;
 
     while (reader.streamUntilDelimiter(lineBuffer.writer(), '\n', lineBuffer.buffer.len)) : (lineBuffer.reset()) {
-        const record = try parseGame(lineBuffer.getWritten());
-        if (record.valid) {
-            validIdSum += record.id;
+        const game = try parseGame(lineBuffer.getWritten());
+        if (game.valid) {
+            validIdSum += game.id;
         }
-        powerSum += record.power();
+        powerSum += game.power();
     } else |err| {
         switch (err) {
             error.EndOfStream => {},
