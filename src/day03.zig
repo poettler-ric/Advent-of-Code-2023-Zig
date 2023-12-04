@@ -4,6 +4,9 @@ const expect = testing.expect;
 
 const FILENAME = "adventofcode_2023_03.txt";
 
+const GEAR = '*';
+const SPACER = '.';
+
 const Point = struct {
     x: usize,
     y: usize,
@@ -47,7 +50,7 @@ test "getWholeNumber" {
 const ParseOptions = struct {
     allocator: std.mem.Allocator = std.heap.page_allocator,
 };
-fn parseSchematic(fileName: []const u8, opt: ParseOptions) !u32 {
+fn parseSchematic(fileName: []const u8, opt: ParseOptions) ![2]u32 {
     const file = try std.fs.cwd().openFile(fileName, .{});
     defer file.close();
     var bufReader = std.io.bufferedReader(file.reader());
@@ -72,13 +75,16 @@ fn parseSchematic(fileName: []const u8, opt: ParseOptions) !u32 {
         }
     }
     var partSum: u32 = 0;
+    var gearRatioSum: u32 = 0;
     var seen = std.AutoHashMap(Point, void).init(opt.allocator);
     defer seen.deinit();
 
     // iterate over all lines and characters
     for (content.items, 0..) |line, y| {
         for (line.items, 0..) |c, x| {
-            if (c != '.' and !std.ascii.isDigit(c)) {
+            if (c != SPACER and !std.ascii.isDigit(c)) {
+                var gearNumberCount: u32 = 0;
+                var gearRatio: u32 = 0;
                 // scan around the point for digits
                 for (if (y == 0) 0 else y - 1..@min(y + 2, content.items.len)) |yi| {
                     for (if (x == 0) 0 else x - 1..@min(x + 2, line.items.len)) |xi| {
@@ -92,22 +98,37 @@ fn parseSchematic(fileName: []const u8, opt: ParseOptions) !u32 {
                                 for (found.start..found.end) |i| {
                                     try seen.put(.{ .x = i, .y = yi }, {});
                                 }
+
+                                if (c == GEAR) {
+                                    if (gearNumberCount == 0) {
+                                        gearRatio = found.number;
+                                    } else {
+                                        gearRatio *= found.number;
+                                    }
+                                    gearNumberCount += 1;
+                                }
                             }
                         }
                     }
+                }
+
+                if (gearNumberCount == 2) {
+                    gearRatioSum += gearRatio;
                 }
             }
         }
     }
 
-    return partSum;
+    return [_]u32{ partSum, gearRatioSum };
 }
 
 test "parseSchematic" {
-    try expect(4361 == try parseSchematic(
+    const sums = try parseSchematic(
         "adventofcode_2023_03_test_01.txt",
         .{ .allocator = testing.allocator },
-    ));
+    );
+    try expect(4361 == sums[0]);
+    try expect(467835 == sums[1]);
 }
 
 pub fn main() !void {
@@ -119,11 +140,12 @@ pub fn main() !void {
     var stdoutBuffer = std.io.bufferedWriter(std.io.getStdOut().writer());
     const stdout = stdoutBuffer.writer();
 
-    const partSum = try parseSchematic(
+    const sums = try parseSchematic(
         FILENAME,
         .{ .allocator = arena.allocator() },
     );
-    try stdout.print("part sum: {d}\n", .{partSum});
+    try stdout.print("part sum: {d}\n", .{sums[0]});
+    try stdout.print("gear ratio sum: {d}\n", .{sums[1]});
     try stdout.print(
         "time usage: {d} μs\n",
         .{std.time.microTimestamp() - start},
