@@ -84,6 +84,7 @@ const ParseOptions = struct {
 };
 const ParseResult = struct {
     points: u32,
+    cardCount: u32,
 };
 fn parseCards(fileName: []const u8, opt: ParseOptions) !ParseResult {
     const file = try std.fs.cwd().openFile(fileName, .{});
@@ -94,19 +95,46 @@ fn parseCards(fileName: []const u8, opt: ParseOptions) !ParseResult {
     var buffer: [1024 * 4]u8 = undefined;
     var lineBuffer = io.fixedBufferStream(&buffer);
 
-    var result = ParseResult{ .points = 0 };
+    var currentCard: u32 = 0;
+    var cardCount = std.ArrayList(u32).init(opt.allocator);
+    defer cardCount.deinit();
+
+    var result = ParseResult{ .points = 0, .cardCount = 0 };
 
     while (reader.streamUntilDelimiter(
         lineBuffer.writer(),
         '\n',
         lineBuffer.buffer.len,
-    )) : (lineBuffer.reset()) {
-        result.points += score(try matchCount(lineBuffer.getWritten(), opt));
+    )) : ({
+        lineBuffer.reset();
+        currentCard += 1;
+    }) {
+        const matches = try matchCount(lineBuffer.getWritten(), opt);
+
+        result.points += score(matches);
+
+        if (cardCount.items.len <= currentCard) {
+            try cardCount.append(1);
+        } else {
+            cardCount.items[currentCard] += 1;
+        }
+        const additions = cardCount.items[currentCard];
+        for (currentCard + 1..currentCard + 1 + matches) |i| {
+            if (cardCount.items.len <= i) {
+                try cardCount.append(additions);
+            } else {
+                cardCount.items[i] += additions;
+            }
+        }
     } else |err| {
         switch (err) {
             error.EndOfStream => {},
             else => return err,
         }
+    }
+
+    for (cardCount.items[0..currentCard]) |c| {
+        result.cardCount += c;
     }
 
     return result;
@@ -118,6 +146,7 @@ test "parseCards" {
         .{ .allocator = testing.allocator },
     );
     try expect(13 == parsed.points);
+    try expect(30 == parsed.cardCount);
 }
 
 pub fn main() !void {
@@ -137,6 +166,7 @@ pub fn main() !void {
         .{ .allocator = arena.allocator() },
     );
     try stdout.print("card point sum: {d}\n", .{result.points});
+    try stdout.print("card count: {d}\n", .{result.cardCount});
     try stdout.print(
         "time usage: {d} μs\n",
         .{time.microTimestamp() - start},
