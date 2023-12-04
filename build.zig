@@ -24,6 +24,11 @@ pub fn build(b: *std.Build) void {
             .name = "day02",
             .source = "src/day02.zig",
             .unittest = true,
+        },
+        .{
+            .name = "day03",
+            .source = "src/day03.zig",
+            .unittest = true,
             .run = true,
         },
     };
