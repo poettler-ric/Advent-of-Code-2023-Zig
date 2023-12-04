@@ -17,14 +17,25 @@ fn matchCount(str: []const u8, opt: ParseOptions) !u32 {
             var winning = std.AutoHashMap(u32, void).init(opt.allocator);
             defer winning.deinit();
 
-            var winningNumbers = mem.splitScalar(u8, str[cardSeparator + 1 .. winningSeparator], ' ');
+            var winningNumbers = mem.splitScalar(
+                u8,
+                str[cardSeparator + 1 .. winningSeparator],
+                ' ',
+            );
             while (winningNumbers.next()) |numberString| {
                 if (numberString.len > 0) {
-                    try winning.put(try fmt.parseInt(u32, numberString, 10), {});
+                    try winning.put(
+                        try fmt.parseInt(u32, numberString, 10),
+                        {},
+                    );
                 }
             }
 
-            var numbers = mem.splitScalar(u8, str[winningSeparator + 1 ..], ' ');
+            var numbers = mem.splitScalar(
+                u8,
+                str[winningSeparator + 1 ..],
+                ' ',
+            );
             while (numbers.next()) |numberString| {
                 if (numberString.len > 0) {
                     const number = try fmt.parseInt(u32, numberString, 10);
@@ -45,7 +56,10 @@ fn matchCount(str: []const u8, opt: ParseOptions) !u32 {
 
 test "matchCount" {
     const opt = ParseOptions{ .allocator = testing.allocator };
-    try expect(4 == try matchCount("Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53", opt));
+    try expect(4 == try matchCount(
+        "Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53",
+        opt,
+    ));
     try expect(2 == try matchCount("Card 2: 13 32 20 16 61 | 61 30 68 82 17 32 24 19", opt));
     try expect(2 == try matchCount("Card 3:  1 21 53 59 44 | 69 82 63 72 16 21 14  1", opt));
     try expect(1 == try matchCount("Card 4: 41 92 73 84 69 | 59 84 76 51 58  5 54 83", opt));
@@ -54,10 +68,7 @@ test "matchCount" {
 }
 
 fn score(matches: u32) u32 {
-    return switch (matches) {
-        0 => 0,
-        else => std.math.pow(u32, 2, matches - 1),
-    };
+    return if (matches == 0) 0 else std.math.pow(u32, 2, matches - 1);
 }
 
 test "score" {
@@ -85,7 +96,11 @@ fn parseCards(fileName: []const u8, opt: ParseOptions) !ParseResult {
 
     var result = ParseResult{ .points = 0 };
 
-    while (reader.streamUntilDelimiter(lineBuffer.writer(), '\n', lineBuffer.buffer.len)) : (lineBuffer.reset()) {
+    while (reader.streamUntilDelimiter(
+        lineBuffer.writer(),
+        '\n',
+        lineBuffer.buffer.len,
+    )) : (lineBuffer.reset()) {
         result.points += score(try matchCount(lineBuffer.getWritten(), opt));
     } else |err| {
         switch (err) {
