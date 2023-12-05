@@ -12,37 +12,40 @@ const Day05Error = error{
     NoRange,
 };
 
-const Mapping = struct {
+const Range = struct {
     start: i64,
     end: i64,
-    delta: i64,
 
-    fn contains(self: Mapping, i: i64) bool {
+    fn contains(self: Range, i: i64) bool {
         return self.start <= i and i < self.end;
     }
+};
+
+test "Range.contains" {
+    const r = Range{
+        .start = 2,
+        .end = 5,
+    };
+    try expect(!r.contains(1));
+    try expect(r.contains(2));
+    try expect(r.contains(3));
+    try expect(r.contains(4));
+    try expect(!r.contains(5));
+}
+
+const Mapping = struct {
+    range: Range,
+    delta: i64,
 
     fn map(self: Mapping, i: i64) i64 {
         return i + self.delta;
     }
 };
 
-test "Mapping.contains" {
-    const m = Mapping{
-        .start = 2,
-        .end = 5,
-        .delta = 0,
-    };
-    try expect(!m.contains(1));
-    try expect(m.contains(2));
-    try expect(m.contains(3));
-    try expect(m.contains(4));
-    try expect(!m.contains(5));
-}
-
 fn mapList(mappings: []Mapping, list: []i64) void {
     for (list, 0..) |s, i| {
         for (mappings) |d| {
-            if (d.contains(s)) {
+            if (d.range.contains(s)) {
                 list[i] = d.map(s);
                 break;
             }
@@ -86,8 +89,8 @@ fn parseMapping(fileName: []const u8, opt: ParseOptions) !ParseResult {
     lineBuffer.clearRetainingCapacity();
 
     // parse mappings
-    var deltas = std.ArrayList(Mapping).init(opt.allocator);
-    defer deltas.deinit();
+    var mappings = std.ArrayList(Mapping).init(opt.allocator);
+    defer mappings.deinit();
 
     while (reader.streamUntilDelimiter(
         lineBuffer.writer(),
@@ -96,8 +99,8 @@ fn parseMapping(fileName: []const u8, opt: ParseOptions) !ParseResult {
     )) : (lineBuffer.clearRetainingCapacity()) {
         const line = lineBuffer.items;
         if (line.len == 0) {
-            mapList(deltas.items, sources.items);
-            deltas.clearRetainingCapacity();
+            mapList(mappings.items, sources.items);
+            mappings.clearRetainingCapacity();
         } else if (std.ascii.isDigit(line[0])) {
             var mapIteraor = mem.splitScalar(u8, line, ' ');
             var destinationStart: Day05Error!i64 = Day05Error.NoDestinationStart;
@@ -112,9 +115,11 @@ fn parseMapping(fileName: []const u8, opt: ParseOptions) !ParseResult {
             if (mapIteraor.next()) |s| {
                 range = try fmt.parseInt(i64, s, 10);
             }
-            try deltas.append(Mapping{
-                .start = try sourceStart,
-                .end = try sourceStart + try range + 1,
+            try mappings.append(Mapping{
+                .range = Range{
+                    .start = try sourceStart,
+                    .end = try sourceStart + try range + 1,
+                },
                 .delta = try destinationStart - try sourceStart,
             });
         }
@@ -125,7 +130,7 @@ fn parseMapping(fileName: []const u8, opt: ParseOptions) !ParseResult {
         }
     }
 
-    mapList(deltas.items, sources.items);
+    mapList(mappings.items, sources.items);
 
     return ParseResult{ .location = mem.min(i64, sources.items) };
 }
