@@ -51,20 +51,16 @@ fn parseMapping(fileName: []const u8, opt: ParseOptions) !ParseResult {
     var bufReader = io.bufferedReader(file.reader());
     const reader = bufReader.reader();
 
-    var buffer: [1024 * 4]u8 = undefined;
-    var lineBuffer = io.fixedBufferStream(&buffer);
+    var lineBuffer = std.ArrayList(u8).init(opt.allocator);
+    defer lineBuffer.deinit();
 
     // read seeds
-    try reader.streamUntilDelimiter(
-        lineBuffer.writer(),
-        '\n',
-        lineBuffer.buffer.len,
-    );
+    try reader.streamUntilDelimiter(lineBuffer.writer(), '\n', null);
 
     var sources = std.ArrayList(i64).init(opt.allocator);
     defer sources.deinit();
 
-    const seedsLine = lineBuffer.getWritten();
+    const seedsLine = lineBuffer.items;
     if (mem.indexOfScalar(u8, seedsLine, ':')) |pos| {
         var seedsIterator = mem.splitScalar(u8, seedsLine[pos + 2 ..], ' ');
         while (seedsIterator.next()) |seedString| {
@@ -75,8 +71,8 @@ fn parseMapping(fileName: []const u8, opt: ParseOptions) !ParseResult {
     }
 
     // ignore empty line
-    try reader.streamUntilDelimiter(lineBuffer.writer(), '\n', lineBuffer.buffer.len);
-    lineBuffer.reset();
+    try reader.streamUntilDelimiter(lineBuffer.writer(), '\n', null);
+    lineBuffer.clearRetainingCapacity();
 
     // parse mappings
     var deltas = std.ArrayList(Mapping).init(opt.allocator);
@@ -85,9 +81,9 @@ fn parseMapping(fileName: []const u8, opt: ParseOptions) !ParseResult {
     while (reader.streamUntilDelimiter(
         lineBuffer.writer(),
         '\n',
-        lineBuffer.buffer.len,
-    )) : (lineBuffer.reset()) {
-        const line = lineBuffer.getWritten();
+        null,
+    )) : (lineBuffer.clearRetainingCapacity()) {
+        const line = lineBuffer.items;
         if (line.len == 0) {
             for (sources.items, 0..) |s, i| {
                 for (deltas.items) |d| {
