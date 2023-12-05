@@ -39,6 +39,17 @@ test "Mapping.contains" {
     try expect(!m.contains(5));
 }
 
+fn mapList(mappings: []Mapping, list: []i64) void {
+    for (list, 0..) |s, i| {
+        for (mappings) |d| {
+            if (d.contains(s)) {
+                list[i] = d.map(s);
+                break;
+            }
+        }
+    }
+}
+
 const ParseOptions = struct {
     allocator: std.mem.Allocator = std.heap.page_allocator,
 };
@@ -85,14 +96,7 @@ fn parseMapping(fileName: []const u8, opt: ParseOptions) !ParseResult {
     )) : (lineBuffer.clearRetainingCapacity()) {
         const line = lineBuffer.items;
         if (line.len == 0) {
-            for (sources.items, 0..) |s, i| {
-                for (deltas.items) |d| {
-                    if (d.contains(s)) {
-                        sources.items[i] = d.map(s);
-                        break;
-                    }
-                }
-            }
+            mapList(deltas.items, sources.items);
             deltas.clearRetainingCapacity();
         } else if (std.ascii.isDigit(line[0])) {
             var mapIteraor = mem.splitScalar(u8, line, ' ');
@@ -121,14 +125,8 @@ fn parseMapping(fileName: []const u8, opt: ParseOptions) !ParseResult {
         }
     }
 
-    for (sources.items, 0..) |s, i| {
-        for (deltas.items) |d| {
-            if (d.contains(s)) {
-                sources.items[i] = d.map(s);
-                break;
-            }
-        }
-    }
+    mapList(deltas.items, sources.items);
+
     return ParseResult{ .location = mem.min(i64, sources.items) };
 }
 
