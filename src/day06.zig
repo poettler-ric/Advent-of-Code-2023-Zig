@@ -7,6 +7,7 @@ const expect = testing.expect;
 
 const Day06Error = error{
     NoColonFound,
+    NoNumberFound,
 };
 
 fn extractNumbers(comptime T: type, str: []const u8, list: *std.ArrayList(T)) !void {
@@ -49,12 +50,18 @@ fn parseRecords(fileName: []const u8, opt: ParseOptions) !ParseResult {
     } else {
         return Day06Error.NoColonFound;
     }
+    if (times.items.len == 0) {
+        return Day06Error.NoNumberFound;
+    }
     lineBuffer.clearRetainingCapacity();
     try reader.streamUntilDelimiter(lineBuffer.writer(), '\n', null);
     if (mem.indexOfScalar(u8, lineBuffer.items, ':')) |pos| {
         try extractNumbers(u32, lineBuffer.items[pos + 1 ..], &distances);
     } else {
         return Day06Error.NoColonFound;
+    }
+    if (distances.items.len == 0) {
+        return Day06Error.NoNumberFound;
     }
     lineBuffer.clearRetainingCapacity();
 
