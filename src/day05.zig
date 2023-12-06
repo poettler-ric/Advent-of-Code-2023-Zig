@@ -33,6 +33,11 @@ test "Range.contains" {
     try expect(!r.contains(5));
 }
 
+fn rangeLtContext(ctx: void, lhs: Range, rhs: Range) bool {
+    _ = ctx;
+    return lhs.start < rhs.start;
+}
+
 const Mapping = struct {
     range: Range,
     delta: i64,
@@ -41,6 +46,11 @@ const Mapping = struct {
         return i + self.delta;
     }
 };
+
+fn mappingLtContext(ctx: void, lhs: Mapping, rhs: Mapping) bool {
+    _ = ctx;
+    return lhs.range.start < rhs.range.start;
+}
 
 fn mapList(mappings: []Mapping, list: []i64) void {
     for (list, 0..) |s, i| {
@@ -51,6 +61,12 @@ fn mapList(mappings: []Mapping, list: []i64) void {
             }
         }
     }
+}
+
+fn mapRanges(mappings: []Mapping, sources: []Range, destinations: *std.ArrayList(Range)) void {
+    _ = destinations;
+    _ = sources;
+    _ = mappings;
 }
 
 const ParseOptions = struct {
@@ -84,6 +100,24 @@ fn parseMapping(fileName: []const u8, opt: ParseOptions) !ParseResult {
         return Day05Error.NoSeedSeparator;
     }
 
+    var buffer1 = std.ArrayList(Range).init(opt.allocator);
+    defer buffer1.deinit();
+    var buffer2 = std.ArrayList(Range).init(opt.allocator);
+    defer buffer2.deinit();
+
+    var sourceRanges = &buffer1;
+    var destinationRanges = &buffer1;
+    _ = destinationRanges;
+
+    for (0..sources.items.len / 2) |i| {
+        const start = sources.items[i * 2];
+        const range = sources.items[i * 2 + 1];
+        try sourceRanges.append(Range{
+            .start = start,
+            .end = start + range + 1,
+        });
+    }
+
     // ignore empty line
     try reader.streamUntilDelimiter(lineBuffer.writer(), '\n', null);
     lineBuffer.clearRetainingCapacity();
@@ -99,6 +133,7 @@ fn parseMapping(fileName: []const u8, opt: ParseOptions) !ParseResult {
     )) : (lineBuffer.clearRetainingCapacity()) {
         const line = lineBuffer.items;
         if (line.len == 0) {
+            mem.sortUnstable(Mapping, mappings.items, {}, mappingLtContext);
             mapList(mappings.items, sources.items);
             mappings.clearRetainingCapacity();
         } else if (std.ascii.isDigit(line[0])) {
