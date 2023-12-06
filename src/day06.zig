@@ -46,15 +46,23 @@ fn canBeat(pressDuration: u64, time: u64, distance: u64) bool {
     return (time - pressDuration) * pressDuration > distance;
 }
 
+fn solveQuadraticFormula(p: f64, q: f64) [2]f64 {
+    const math = std.math;
+    return [2]f64{
+        -(p / 2) + math.sqrt(math.pow(f64, p / 2, 2) - q),
+        -(p / 2) - math.sqrt(math.pow(f64, p / 2, 2) - q),
+    };
+}
+
 fn getPossiblities(time: u64, distance: u64) u64 {
-    var pressDuration: u64 = 1;
-    var possiblities: u64 = 0;
-    while (pressDuration < time) : (pressDuration += 1) {
-        if (canBeat(pressDuration, time, distance)) {
-            possiblities += 1;
-        }
-    }
-    return possiblities;
+    const fTime: f64 = @floatFromInt(time);
+    const fDistance: f64 = @floatFromInt(distance);
+    const solutions = solveQuadraticFormula(-fTime, fDistance);
+    const lower = mem.min(f64, &solutions);
+    const upper = mem.max(f64, &solutions);
+    const ceil: u64 = if (@mod(lower, 1) == 0.0) @as(u64, @intFromFloat(lower)) + 1 else @intFromFloat(@ceil(lower));
+    const floor: u64 = if (@mod(upper, 1) == 0.0) @as(u64, @intFromFloat(upper)) - 1 else @intFromFloat(@floor(upper));
+    return floor - ceil + 1;
 }
 const ParseOptions = struct {
     allocator: std.mem.Allocator = std.heap.page_allocator,
