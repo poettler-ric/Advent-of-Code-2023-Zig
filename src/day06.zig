@@ -54,12 +54,13 @@ fn getPossiblities(time: u64, distance: u64) u64 {
     const fTime: f64 = @floatFromInt(time);
     const fDistance: f64 = @floatFromInt(distance);
     const solutions = solveQuadraticFormula(f64, -fTime, fDistance);
-    const lower = mem.min(f64, &solutions);
-    const upper = mem.max(f64, &solutions);
+    const lower = @min(solutions[0], solutions[1]);
+    const upper = @max(solutions[0], solutions[1]);
     const ceil: u64 = if (@mod(lower, 1) == 0.0) @as(u64, @intFromFloat(lower)) + 1 else @intFromFloat(@ceil(lower));
     const floor: u64 = if (@mod(upper, 1) == 0.0) @as(u64, @intFromFloat(upper)) - 1 else @intFromFloat(@floor(upper));
     return floor - ceil + 1;
 }
+
 const ParseOptions = struct {
     allocator: std.mem.Allocator = std.heap.page_allocator,
 };
@@ -98,6 +99,7 @@ fn parseRecords(fileName: []const u8, opt: ParseOptions) !ParseResult {
         return Day06Error.NoNumberFound;
     }
     lineBuffer.clearRetainingCapacity();
+
     try reader.streamUntilDelimiter(lineBuffer.writer(), '\n', null);
     if (mem.indexOfScalar(u8, lineBuffer.items, ':')) |pos| {
         try extractNumbers(u64, lineBuffer.items[pos + 1 ..], &distances);
@@ -118,6 +120,7 @@ fn parseRecords(fileName: []const u8, opt: ParseOptions) !ParseResult {
         .possiblitiesProduct = 0,
         .singlePossiblities = 0,
     };
+
     for (times.items, distances.items) |time, distance| {
         const possiblities = getPossiblities(time, distance);
         if (result.possiblitiesProduct == 0) {
@@ -126,7 +129,6 @@ fn parseRecords(fileName: []const u8, opt: ParseOptions) !ParseResult {
             result.possiblitiesProduct *= possiblities;
         }
     }
-
     result.singlePossiblities = getPossiblities(singleTime, singleDistance);
 
     return result;
