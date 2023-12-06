@@ -10,8 +10,8 @@ const Day06Error = error{
     NoNumberFound,
 };
 
-fn concatDigits(comptime T: type, str: []const u8) ?T {
-    var buffer: [1024]u8 = undefined;
+fn concatDigits(comptime T: type, comptime bufSize: usize, str: []const u8) ?T {
+    var buffer: [bufSize]u8 = undefined;
     var pos: usize = 0;
 
     for (str) |c| {
@@ -29,7 +29,7 @@ fn concatDigits(comptime T: type, str: []const u8) ?T {
 }
 
 test "concatDigits" {
-    try expect(3245 == concatDigits(u64, " 3 $ 24. 5").?);
+    try expect(3245 == concatDigits(u64, 1024, " 3 $ 24. 5").?);
 }
 
 fn extractNumbers(comptime T: type, str: []const u8, list: *std.ArrayList(T)) !void {
@@ -42,22 +42,18 @@ fn extractNumbers(comptime T: type, str: []const u8, list: *std.ArrayList(T)) !v
     }
 }
 
-fn canBeat(pressDuration: u64, time: u64, distance: u64) bool {
-    return (time - pressDuration) * pressDuration > distance;
-}
-
-fn solveQuadraticFormula(p: f64, q: f64) [2]f64 {
+fn solveQuadraticFormula(comptime T: type, p: T, q: T) [2]T {
     const math = std.math;
-    return [2]f64{
-        -(p / 2) + math.sqrt(math.pow(f64, p / 2, 2) - q),
-        -(p / 2) - math.sqrt(math.pow(f64, p / 2, 2) - q),
+    return [2]T{
+        -(p / 2) + math.sqrt(math.pow(T, p / 2, 2) - q),
+        -(p / 2) - math.sqrt(math.pow(T, p / 2, 2) - q),
     };
 }
 
 fn getPossiblities(time: u64, distance: u64) u64 {
     const fTime: f64 = @floatFromInt(time);
     const fDistance: f64 = @floatFromInt(distance);
-    const solutions = solveQuadraticFormula(-fTime, fDistance);
+    const solutions = solveQuadraticFormula(f64, -fTime, fDistance);
     const lower = mem.min(f64, &solutions);
     const upper = mem.max(f64, &solutions);
     const ceil: u64 = if (@mod(lower, 1) == 0.0) @as(u64, @intFromFloat(lower)) + 1 else @intFromFloat(@ceil(lower));
@@ -90,7 +86,7 @@ fn parseRecords(fileName: []const u8, opt: ParseOptions) !ParseResult {
     try reader.streamUntilDelimiter(lineBuffer.writer(), '\n', null);
     if (mem.indexOfScalar(u8, lineBuffer.items, ':')) |pos| {
         try extractNumbers(u64, lineBuffer.items[pos + 1 ..], &times);
-        if (concatDigits(u64, lineBuffer.items[pos + 1 ..])) |number| {
+        if (concatDigits(u64, 1024, lineBuffer.items[pos + 1 ..])) |number| {
             singleTime = number;
         } else {
             return Day06Error.NoNumberFound;
@@ -105,7 +101,7 @@ fn parseRecords(fileName: []const u8, opt: ParseOptions) !ParseResult {
     try reader.streamUntilDelimiter(lineBuffer.writer(), '\n', null);
     if (mem.indexOfScalar(u8, lineBuffer.items, ':')) |pos| {
         try extractNumbers(u64, lineBuffer.items[pos + 1 ..], &distances);
-        if (concatDigits(u64, lineBuffer.items[pos + 1 ..])) |number| {
+        if (concatDigits(u64, 1024, lineBuffer.items[pos + 1 ..])) |number| {
             singleDistance = number;
         } else {
             return Day06Error.NoNumberFound;
